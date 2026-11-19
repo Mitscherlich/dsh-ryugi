@@ -78,7 +78,7 @@ export function agentsSkillsRoot(env = process.env) {
 /**
  * Candidate skills directories, most specific first: the configured root, the
  * environment, then either explicit candidates or DSH's own root followed by
- * common Ryugi checkouts.
+ * the checkout that contains this package (or one named by config/environment).
  * @param {object} [config] plugin config
  * @param {object} [env] environment to read
  * @param {string[]} [candidates] replacements for the built-in locations
@@ -101,8 +101,6 @@ export function candidateSkillsRoots(config = {}, env = process.env, candidates)
   }
   // Installed inside a checkout, as <repo>/.dsh-plugin.
   checkouts.push(path.resolve(HERE, '..'));
-  checkouts.push(path.join(env.HOME || os.homedir(), 'i', 'ryugi'));
-  checkouts.push(path.join(env.HOME || os.homedir(), 'ryugi'));
   for (const root of checkouts) list.push(path.join(expandHome(root, env), 'skills'));
   return list;
 }

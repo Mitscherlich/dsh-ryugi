@@ -58,10 +58,17 @@ try {
   assert.deepEqual(ordered.searched, [other, skills], 'deduplicated, in order');
   assert.equal(resolveSkillsRoot({ candidates: [other] }).root, undefined);
 
-  // The default list starts with DSH's root, then common checkouts.
+  // The default list is DSH's root followed by the checkout that contains the
+  // package; no machine-specific home directories are guessed.
+  const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
   const defaults = candidateSkillsRoots({}, { HOME: root });
-  assert.equal(defaults[0], path.join(root, '.agents', 'skills'));
-  assert.ok(defaults.includes(path.join(root, 'i', 'ryugi', 'skills')), 'common checkout location');
+  assert.deepEqual(defaults, [
+    path.join(root, '.agents', 'skills'),
+    path.join(path.resolve(repoRoot, '..'), 'skills'),
+  ]);
+  assert.ok(
+    !defaults.some((entry) => entry.includes('/i/ryugi') || entry.endsWith('/ryugi/skills')),
+  );
 
   // The bundled mapping is the fallback; without a root there is no bootstrap.
   assert.equal(buildBootstrap({}), '');

@@ -51,9 +51,8 @@ one skills root, resolved in this order:
 1. `config.skillsRoot` on the bundle row,
 2. `DSH_RYUGI_SKILLS`,
 3. `~/.agents/skills` (DSH's own user-level root, where the installer puts them),
-4. a checkout's `skills/`: the parent directory when installed as
-   `<repo>/.dsh-plugin`, `config.ryugiRoot` / `DSH_RYUGI_ROOT` if given, then
-   `~/i/ryugi` and `~/ryugi`.
+4. a checkout's `skills/`: `config.ryugiRoot` / `DSH_RYUGI_ROOT` when given, or
+   the parent directory when installed as `<repo>/.dsh-plugin`.
 
 When the root is `~/.agents/skills`, DSH registers the skills itself and the
 plugin skips its own registration; a checkout is registered by the plugin.

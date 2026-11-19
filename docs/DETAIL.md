@@ -56,8 +56,8 @@ the session. The message names the `comment` command; the agent reads it with
 - DeepSeek Harness with the Web app and, for the inline artboard, the Desktop
   shell. Restart DSH after installing or updating the bundle.
 - A Ryugi skills root: `~/.agents/skills` populated by `scripts/install-skills.mjs`,
-  or a checkout's `skills/` found through `config.skillsRoot`,
-  `DSH_RYUGI_SKILLS`, `config.ryugiRoot`, or `~/i/ryugi` / `~/ryugi`. It supplies
+  or a checkout's `skills/` named by `config.skillsRoot`, `DSH_RYUGI_SKILLS`,
+  `config.ryugiRoot`, or the parent directory of a `.dsh-plugin` install. It supplies
   `using-ryugi` for the bootstrap, the workflow skills, and
   `artifacts/app/comment-watch.cjs` for feedback. The DSH tool mapping ships in
   this package and the root's copy wins when it exists.
