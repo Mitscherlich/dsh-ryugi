@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Ryugi",
+    "description": "Adds Ryugi mode and the Artboard to DeepSeek Harness. Ryugi mode starts every task on the using-ryugi workflow: brainstorm, draw the options on the Artboard, approve a spec, then hand the tasks to an agent team. The 画板 view sits after 对话 and 轨迹, and new artifacts open the Artboard in the right sidebar.",
+    "detail": "docs/DETAIL.md"
+  }
+}

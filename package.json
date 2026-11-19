@@ -1,0 +1,55 @@
+{
+  "name": "dsh-ryugi",
+  "version": "0.1.0",
+  "description": "Ryugi mode and the Artboard inside DeepSeek Harness",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "preset.cjs",
+    "preset-text.cjs",
+    "cordis.patch.yml",
+    "locale",
+    "assets",
+    "docs",
+    "icon.svg"
+  ],
+  "scripts": {
+    "test": "bun run tests/resolve.mjs && bun run tests/smoke.mjs && bun run tests/client.mjs",
+    "check": "bun run test && bun run format:check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "bun check"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar-right",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.10.1",
+    "typescript": "^7.0.2"
+  }
+}

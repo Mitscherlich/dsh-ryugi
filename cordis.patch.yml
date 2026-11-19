@@ -1,0 +1,13 @@
+# Ryugi for DeepSeek Harness.
+#
+# One Host plugin owns the session bootstrap, Team mode, the artifact routes and
+# the Ryugi mode preset. The Client module (declared by `dsh.client` in
+# package.json) adds the 画板 view after 对话/轨迹 and the Artboard tab in the
+# right sidebar.
+#
+# The preset is registered from index.js rather than declared here: a preset row
+# keeps its own config verbatim for the child rows it carries, so its display
+# name could not follow the UI language.
+- insert:
+    - id: ryugi
+      name: 'dsh-ryugi'

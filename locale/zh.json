@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Ryugi",
+    "description": "为 DeepSeek Harness 增加「设计模式」与画板。选择设计模式后，每个新任务都从 using-ryugi 流程开始：先讨论需求，在画板上画方案，批准规格，再把任务交给智能体团队。画板页位于「对话」「轨迹」之后，新产物会自动在右侧边栏打开画板。",
+    "detail": "docs/DETAIL.md"
+  }
+}
