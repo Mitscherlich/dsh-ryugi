@@ -21,14 +21,16 @@
     "locale",
     "assets",
     "docs",
-    "icon.svg"
+    "icon.svg",
+    "scripts"
   ],
   "scripts": {
     "test": "bun run tests/resolve.mjs && bun run tests/smoke.mjs && bun run tests/client.mjs",
     "check": "bun run test && bun run format:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "bun check"
+    "typecheck": "bun check",
+    "install-skills": "node scripts/install-skills.mjs"
   },
   "engines": {
     "node": ">=20.12"
@@ -51,5 +53,8 @@
     "@types/bun": "latest",
     "prettier": "^3.10.1",
     "typescript": "^7.0.2"
+  },
+  "bin": {
+    "dsh-ryugi-install-skills": "./scripts/install-skills.mjs"
   }
 }

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PRESET = 'design';
 const BUNDLED_TOOLS = path.join(HERE, 'assets', 'dsh-tools.md');
-const CHECKOUT_MARKER = path.join('skills', 'using-ryugi', 'SKILL.md');
+const SKILL_MARKER = path.join('using-ryugi', 'SKILL.md');
 const MARKER = '<!-- ryugi-bootstrap -->';
 const ARTIFACT_TYPES = ['artboard', 'document', 'whiteboard', 'slides', 'html', 'verify', 'report'];
 const DEFAULT_SERVER_DIR = path.join(
@@ -59,74 +59,99 @@ function readJson(file) {
   }
 }
 
-/** Whether a directory looks like a Ryugi checkout this plugin can read. */
-export function isCheckout(dir) {
-  return typeof dir === 'string' && dir !== '' && fs.existsSync(path.join(dir, CHECKOUT_MARKER));
+/** Whether a directory is a skills root this plugin can read. */
+export function isSkillsRoot(dir) {
+  return typeof dir === 'string' && dir !== '' && fs.existsSync(path.join(dir, SKILL_MARKER));
 }
 
 function expandHome(entry, env) {
   return entry.replace(/^~(?=\/|$)/, env.HOME || os.homedir());
 }
 
+/** The skills root DSH itself scans for the current user. */
+export function agentsSkillsRoot(env = process.env) {
+  const home = env.HOME || os.homedir();
+  const agents = env.DSH_AGENTS_HOME || path.join(home, '.agents');
+  return path.join(path.resolve(expandHome(agents, env)), 'skills');
+}
+
 /**
- * Candidate checkout directories, most specific first: the configured root,
- * the environment, then either explicit candidates or the built-in locations.
+ * Candidate skills directories, most specific first: the configured root, the
+ * environment, then either explicit candidates or DSH's own root followed by
+ * common Ryugi checkouts.
  * @param {object} [config] plugin config
  * @param {object} [env] environment to read
  * @param {string[]} [candidates] replacements for the built-in locations
  */
-export function candidateRoots(config = {}, env = process.env, candidates) {
+export function candidateSkillsRoots(config = {}, env = process.env, candidates) {
   const list = [];
-  if (typeof config.ryugiRoot === 'string' && config.ryugiRoot) list.push(config.ryugiRoot);
-  for (const key of ['DSH_RYUGI_ROOT', 'RYUGI_ROOT']) {
-    if (typeof env[key] === 'string' && env[key]) list.push(env[key]);
+  if (typeof config.skillsRoot === 'string' && config.skillsRoot) list.push(config.skillsRoot);
+  if (typeof env.DSH_RYUGI_SKILLS === 'string' && env.DSH_RYUGI_SKILLS) {
+    list.push(env.DSH_RYUGI_SKILLS);
   }
   if (Array.isArray(candidates)) {
     list.push(...candidates);
-  } else {
-    // Installed inside a checkout, as <repo>/.dsh-plugin.
-    list.push(path.resolve(HERE, '..'));
-    list.push(path.join(os.homedir(), 'i', 'ryugi'));
-    list.push(path.join(os.homedir(), 'ryugi'));
+    return list;
   }
+  list.push(agentsSkillsRoot(env));
+  const checkouts = [];
+  if (typeof config.ryugiRoot === 'string' && config.ryugiRoot) checkouts.push(config.ryugiRoot);
+  for (const key of ['DSH_RYUGI_ROOT', 'RYUGI_ROOT']) {
+    if (typeof env[key] === 'string' && env[key]) checkouts.push(env[key]);
+  }
+  // Installed inside a checkout, as <repo>/.dsh-plugin.
+  checkouts.push(path.resolve(HERE, '..'));
+  checkouts.push(path.join(env.HOME || os.homedir(), 'i', 'ryugi'));
+  checkouts.push(path.join(env.HOME || os.homedir(), 'ryugi'));
+  for (const root of checkouts) list.push(path.join(expandHome(root, env), 'skills'));
   return list;
 }
 
 /**
- * Find the Ryugi checkout that supplies the skills and the comment watch.
- * Nothing is written; a missing checkout only disables the bootstrap, skills
- * and feedback, while the Artboard surfaces keep working.
+ * Find the skills root that supplies using-ryugi, the workflow skills and the
+ * comment watch. Nothing is written; a missing root only disables the
+ * bootstrap, skills and feedback, while the Artboard surfaces keep working.
  * @param {{config?: object, env?: object, candidates?: string[]}} [options]
  * @returns {{root: string|undefined, searched: string[]}}
  */
-export function resolveRyugiRoot({ config = {}, env = process.env, candidates } = {}) {
+export function resolveSkillsRoot({ config = {}, env = process.env, candidates } = {}) {
   const searched = [];
   const seen = new Set();
-  for (const entry of candidateRoots(config, env, candidates)) {
+  for (const entry of candidateSkillsRoots(config, env, candidates)) {
     if (typeof entry !== 'string' || entry === '') continue;
     const dir = path.resolve(expandHome(entry, env));
     if (seen.has(dir)) continue;
     seen.add(dir);
     searched.push(dir);
-    if (isCheckout(dir)) return { root: dir, searched };
+    if (isSkillsRoot(dir)) return { root: dir, searched };
   }
   return { root: undefined, searched };
 }
 
 /**
- * The bootstrap for one Ryugi mode session: using-ryugi plus the DSH tool
- * mapping. The mapping comes from the checkout when it carries one and from
- * this package otherwise, so a standalone install still works.
- * @param {{root?: string, mapping?: string}} [options]
+ * DSH registers the skills it finds under ~/.agents/skills itself, so the
+ * plugin must not register them a second time. A checkout is not one of DSH's
+ * roots, so there the plugin registers the skills itself.
  */
-export function buildBootstrap({ root, mapping } = {}) {
-  if (!root) return '';
-  const skill = readText(path.join(root, 'skills', 'using-ryugi', 'SKILL.md'))
+export function shouldRegisterSkills(skillsRoot, env = process.env) {
+  if (!skillsRoot) return false;
+  return path.resolve(skillsRoot) !== path.resolve(agentsSkillsRoot(env));
+}
+
+/**
+ * The bootstrap for one Ryugi mode session: using-ryugi plus the DSH tool
+ * mapping. The mapping comes from the skills root when it carries one and from
+ * this package otherwise, so a standalone install still works.
+ * @param {{skillsRoot?: string, mapping?: string}} [options]
+ */
+export function buildBootstrap({ skillsRoot, mapping } = {}) {
+  if (!skillsRoot) return '';
+  const skill = readText(path.join(skillsRoot, 'using-ryugi', 'SKILL.md'))
     .replace(/^---[\s\S]*?\n---\n?/, '')
     .trim();
   if (!skill) return '';
   const fromCheckout = readText(
-    path.join(root, 'skills', 'using-ryugi', 'references', 'dsh-tools.md'),
+    path.join(skillsRoot, 'using-ryugi', 'references', 'dsh-tools.md'),
   ).trim();
   const explicit = typeof mapping === 'string' && mapping.trim() !== '' ? mapping.trim() : '';
   const tools = explicit || fromCheckout || readText(BUNDLED_TOOLS).trim();
@@ -332,11 +357,11 @@ function parseSkill(text, fallbackName) {
  * Register a checkout's skills with the Host skill registry. A preset row
  * cannot resolve them with a filesystem provider, because its \`!!js\`
  * expressions evaluate against the profile rather than this package; the
- * registration happens here, against the configured checkout.
+ * registration happens here, against the configured skills root.
  */
-export function registerSkills(ctx, root) {
-  if (!root) return 0;
-  const dir = path.join(root, 'skills');
+export function registerSkills(ctx, skillsRoot) {
+  if (!skillsRoot) return 0;
+  const dir = skillsRoot;
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -374,16 +399,16 @@ export function apply(ctx, config = {}) {
     typeof config.serverDir === 'string' && config.serverDir
       ? config.serverDir
       : DEFAULT_SERVER_DIR;
-  const resolution = resolveRyugiRoot({ config });
-  const ryugiRoot = resolution.root;
-  if (!ryugiRoot) {
+  const resolution = resolveSkillsRoot({ config });
+  const skillsRoot = resolution.root;
+  if (!skillsRoot) {
     ctx.logger?.warn?.(
-      'ryugi: no Ryugi checkout found; set config.ryugiRoot or DSH_RYUGI_ROOT. Searched: ' +
+      'ryugi: no Ryugi skills root found; set config.skillsRoot or DSH_RYUGI_SKILLS, or install the skills into ~/.agents/skills. Searched: ' +
         resolution.searched.join(', '),
     );
   }
-  const watchFile = ryugiRoot
-    ? path.join(ryugiRoot, 'skills', 'artifacts', 'app', 'comment-watch.cjs')
+  const watchFile = skillsRoot
+    ? path.join(skillsRoot, 'artifacts', 'app', 'comment-watch.cjs')
     : undefined;
   const projects = new Set();
   const bootstrapped = new Set();
@@ -469,7 +494,7 @@ export function apply(ctx, config = {}) {
   try {
     ctx.inject(['skills'], (child) => {
       child.effect(() => {
-        registerSkills(child, ryugiRoot);
+        if (shouldRegisterSkills(skillsRoot)) registerSkills(child, skillsRoot);
       }, 'ryugi: skill registration');
     });
   } catch (error) {
@@ -557,7 +582,7 @@ export function apply(ctx, config = {}) {
    */
   function registerBootstrap(agent) {
     if (bootstrapped.has(agent.id)) return;
-    const text = buildBootstrap({ root: ryugiRoot });
+    const text = buildBootstrap({ skillsRoot });
     if (!text) return;
     const prompt = agent.ctx?.systemPrompt;
     if (prompt && typeof prompt.section === 'function') {

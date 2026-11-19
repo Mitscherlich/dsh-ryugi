@@ -55,11 +55,12 @@ the session. The message names the `comment` command; the agent reads it with
 
 - DeepSeek Harness with the Web app and, for the inline artboard, the Desktop
   shell. Restart DSH after installing or updating the bundle.
-- A Ryugi checkout the bundle can read, configured with `config.ryugiRoot`,
-  `DSH_RYUGI_ROOT`/`RYUGI_ROOT`, or auto-detected at `~/i/ryugi` / `~/ryugi`. It
-  supplies `skills/` for the bootstrap and skill registration and
-  `skills/artifacts/app/comment-watch.cjs` for feedback. The DSH tool mapping
-  ships in this package and a checkout's copy wins when it exists.
+- A Ryugi skills root: `~/.agents/skills` populated by `scripts/install-skills.mjs`,
+  or a checkout's `skills/` found through `config.skillsRoot`,
+  `DSH_RYUGI_SKILLS`, `config.ryugiRoot`, or `~/i/ryugi` / `~/ryugi`. It supplies
+  `using-ryugi` for the bootstrap, the workflow skills, and
+  `artifacts/app/comment-watch.cjs` for feedback. The DSH tool mapping ships in
+  this package and the root's copy wins when it exists.
 - Node.js 20.12 or newer for the artifacts CLI.
 
 ## Limitations

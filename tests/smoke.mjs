@@ -51,7 +51,7 @@ try {
   fs.writeFileSync(path.join(dir, 'canvas.json'), JSON.stringify({ title: 'Demo board' }));
 
   // Bootstrap: checkout skill body plus the mapping bundled with this package.
-  const bootstrap = buildBootstrap({ root: checkout });
+  const bootstrap = buildBootstrap({ skillsRoot: path.join(checkout, 'skills') });
   assert.match(bootstrap, /EXTREMELY_IMPORTANT/, 'bootstrap wrapper present');
   assert.match(bootstrap, /FIXTURE_BODY_using-ryugi/, 'checkout skill body used');
   assert.match(bootstrap, /DeepSeek Harness Tool Mapping/, 'bundled mapping used as fallback');
@@ -61,7 +61,7 @@ try {
   const mappingDir = path.join(checkout, 'skills', 'using-ryugi', 'references');
   fs.mkdirSync(mappingDir, { recursive: true });
   fs.writeFileSync(path.join(mappingDir, 'dsh-tools.md'), 'CHECKOUT_MAPPING\n');
-  const withMapping = buildBootstrap({ root: checkout });
+  const withMapping = buildBootstrap({ skillsRoot: path.join(checkout, 'skills') });
   assert.match(withMapping, /CHECKOUT_MAPPING/, 'checkout mapping wins');
   assert.doesNotMatch(withMapping, /DeepSeek Harness Tool Mapping/, 'bundled copy is not mixed in');
 
@@ -158,7 +158,7 @@ try {
     get: service,
     inject: (names, callback) => childContext(names, callback),
   };
-  apply(ctx, { ryugiRoot: checkout, pollMs: 50, serverDir });
+  apply(ctx, { skillsRoot: path.join(checkout, 'skills'), pollMs: 50, serverDir });
   await new Promise((resolve) => setImmediate(resolve));
 
   const skillNames = registeredSkills.map((skill) => skill.name);

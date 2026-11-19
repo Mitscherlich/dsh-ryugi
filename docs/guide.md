@@ -13,12 +13,23 @@ directions on the Artboard.
 
 ## Install
 
-The plugin reads a Ryugi checkout at runtime — it does not copy the skills — so
-it needs one checkout on the machine and nothing else:
+The plugin reads a Ryugi skills root at runtime. Install the skills once into
+`~/.agents/skills` (DSH scans it), or point the plugin at a checkout:
 
 1. Install the `ryugi` command for artifacts if you have not already:
    `npx ryugi-artifacts install --mode full --harness none` (or pick your other
-   harnesses; the unified installer has no `dsh` target yet).
+   harnesses; the unified installer has no `dsh` target yet). Then install the
+   skills, which is what makes Ryugi mode work:
+
+   ```bash
+   node scripts/install-skills.mjs            # latest release → ~/.agents/skills
+   node scripts/install-skills.mjs --ref v1.90.1
+   node scripts/install-skills.mjs --from /path/to/ryugi
+   ```
+
+   The script copies every skill (including `artifacts/app/`, the launcher and
+   the comment watch) from a GitHub release tarball; a checkout is optional.
+
 2. In DSH, open **Plugins** in the sidebar, choose **Add plugin**, and enter
    `github:Mitscherlich/dsh-ryugi` (or the absolute path of a checkout of this
    repository).
@@ -32,24 +43,30 @@ it needs one checkout on the machine and nothing else:
 After a restart, `GET /ryugi/state` reports `plugin.version`; it is the quickest
 way to confirm the running Host loaded this bundle.
 
-### Pointing at a Ryugi checkout
+### Skills root
 
-The plugin resolves the checkout in this order:
+The plugin reads `using-ryugi`, the workflow skills and the comment watch from
+one skills root, resolved in this order:
 
-1. `config.ryugiRoot` on the bundle row,
-2. `DSH_RYUGI_ROOT`, then `RYUGI_ROOT`,
-3. the parent directory, when installed inside a checkout as `<repo>/.dsh-plugin`,
-4. `~/i/ryugi`, then `~/ryugi`.
+1. `config.skillsRoot` on the bundle row,
+2. `DSH_RYUGI_SKILLS`,
+3. `~/.agents/skills` (DSH's own user-level root, where the installer puts them),
+4. a checkout's `skills/`: the parent directory when installed as
+   `<repo>/.dsh-plugin`, `config.ryugiRoot` / `DSH_RYUGI_ROOT` if given, then
+   `~/i/ryugi` and `~/ryugi`.
+
+When the root is `~/.agents/skills`, DSH registers the skills itself and the
+plugin skips its own registration; a checkout is registered by the plugin.
 
 ```yaml
 # profile cordis.patch.yml, when auto-detection is not enough
 - id: ryugi
   config:
-    ryugiRoot: /path/to/ryugi
+    skillsRoot: /path/to/skills
 ```
 
-Without a usable checkout the Artboard surfaces keep working; the bootstrap,
-skills and feedback are skipped with a warning naming the paths it searched.
+Without a usable root the Artboard surfaces keep working; the bootstrap, skills
+and feedback are skipped with a warning naming the paths it searched.
 
 ## What the bundle adds
 
@@ -90,8 +107,8 @@ Skills name actions, not tools. The mapping ships in `assets/dsh-tools.md` and
 covers `skill`, `ask_user_question`, `todo_write`, `read`, `write`, `edit`,
 `glob`, `grep`, `bash`, `web_fetch`, `web_search`, `present`, `subagent`,
 `subagent_fork`, the `team_task_*` board, `send_message`, `wait_agent` and
-`cua`. A checkout's `skills/using-ryugi/references/dsh-tools.md` wins when it
-exists, so the porting documentation and the plugin stay in step.
+`cua`. A root's `using-ryugi/references/dsh-tools.md` wins when it exists, so the
+porting documentation and the plugin stay in step.
 
 ## Harness detection
 
@@ -132,8 +149,8 @@ report what it observed.
 - DeepSeek Harness 0.2.2-rc.5 or newer with the Web app; the inline artboard
   needs the Desktop shell, because the page is served with
   `frame-ancestors 'none'` and must run as a `<webview>` guest.
-- A Ryugi checkout with `skills/` and `skills/artifacts/app/ryugi.cjs`, configured
-  as described above.
+- A Ryugi skills root: `~/.agents/skills` populated by `scripts/install-skills.mjs`,
+  or a checkout's `skills/` configured as described above.
 - A browser-only deployment shows the artifact list and the local URL instead of
   the inline page.
 - The local Ryugi server serves one project at a time — the last one started. An
@@ -173,6 +190,10 @@ running this bundle, 2026-11-19/20):
   readable contrast in dark mode.
 - Changing the profile locale from `en` to `zh` while the Host ran renamed the
   registered preset to 设计模式, and back to `Ryugi mode`, without a restart.
+- `scripts/install-skills.mjs` installed `v1.90.1` from the GitHub tarball
+  (5,053,934 bytes) into a temporary root: 10 skills (including `design-system`)
+  plus `artifacts/app/`; a rerun replaced its own copies, and an unrelated
+  `brainstorming` directory made it refuse with a `--force` hint.
 
 What remains unverified: the inline artboard inside the Desktop `<webview>`
 after the final reload (the lease path was verified in an earlier session), and a
@@ -185,7 +206,7 @@ bun install
 bun run test
 ```
 
-- `tests/resolve.mjs` — checkout resolution (config, environment, `~`, fallbacks).
+- `tests/resolve.mjs` — skills-root resolution (config, environment, `~`, DSH's root, fallbacks).
 - `tests/smoke.mjs` — host plugin against a temporary checkout fixture: bootstrap
   and bundled mapping, skill registration, preset registration and locale, Team
   mode, routes, artifact state.
